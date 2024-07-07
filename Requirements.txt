@@ -1,0 +1,220 @@
+Ewallet application
+-> User can perform the transaction and with wallet.
+
+
+Entities
+User
+Wallet ( for balance)
+Transactions
+Notification
+
+
+
+
+Functional requirements
+1. User can sign in/ sign up.
+2. User can load money to wallet.
+3. User can withdraw money from wallet.
+4. User can perform a transaction with another user.
+5. Users should receive the balance email or message after transactions.
+6. User can request a wallet balance.
+7. User can request the transaction history.
+8. Notification should be triggered to the user with transaction status.
+
+Add on: User can raise a complain against the transaction.
+
+
+Monolith application services:
+com.gfg.ewallet.services
+
+UserService - [ProfileService , UserOnboardingService]
+
+WalletService - single entity
+
+TransactionService - to handle the transaction among the user.
+
+NotificationService - [EmailService]
+
+Utils
+
+
+FeedbackService  - [HelpService,ReviewService]
+
+
+Microservice
+
+1. User Service.
+2. Wallet Service.
+3. Transaction Service.
+4. Notification.
+
+All the exposed service will be REST and inter service would be via Message Queue.
+
+
+API.
+
+User ->
+
+1. Sign up
+2. Log in
+3. get Profile
+4. Update User
+5. Delete User
+
+Wallet ->
+
+1. get balance
+
+Notification ->
+
+No External Service
+
+Transaction ->
+
+
+1. Transaction
+
+
+1. Load balance
+The external bank and my application
+check if enough balance
+debit from sender ( sender is external Bank)
+credit to the receiver( wallet of x user)
+
+2. Withdraw
+
+check if enough balance
+debit from sender ( wallet of x user)
+credit to the receiver( external bank)
+
+3. Transfer
+check if enough balance
+debit from sender ( wallet of A user)
+credit to the receiver( wallet of B user)
+
+
+
+
+API documentation
+
+1.User
+
+1. Sign up
+/user.POST
+
+userName
+emailId
+password
+phoneNumber
+
+Success -> 201 CREATED
+Failure
+1. Invalid email Id or Number
+Failure -> 400 Bad Request
+EWALLET_INVALID_EMAIL_ID
+EWALLET_INVALID_PHONE
+
+2. UserName not available
+Failure -> 400 Bad Request
+EWALLET_USERNAME_UNAVAILABLE
+
+Service failure
+Failure -> 500
+EWALLET_SERVICE_ERROR
+
+
+
+2. Log in
+
+username/email
+password
+Oauth
+
+Success
+200 OK
+Failure
+400 -> EWALLET_BAD_CREDENTIALS
+400 -> EWALLET_EXPIRED_CREDENTIALS
+400 -> EWALLET_ACCOUNT_LOCKED
+
+500 -> EWALLET_SERVICE_ERROR
+
+/user/signin.POST
+
+3. get Profile
+/user.GET {user-id}
+        Success
+200 OK
+
+FAILURE -> BAD_USER_ID
+
+500 -> EWALLET_SERVICE_ERROR
+
+4. Update profile
+User Object
+
+/user.PUT
+
+Success 200 OK
+
+400 -> EWALLET_BAD_CREDENTIALS
+400 -> EWALLET_EXPIRED_CREDENTIALS
+400 -> EWALLET_ACCOUNT_LOCKED
+
+500 -> EWALLET_SERVICE_ERROR
+
+
+
+5. Delete User
+/user.DELETE {user-id}
+
+Success 204 No content
+
+FAILURE -> BAD_USER_ID
+
+500 -> EWALLET_SERVICE_ERROR
+
+
+2. Wallet Service
+
+1. Balance
+/wallet.GET {user-id}
+
+  Success
+200 OK
+
+FAILURE -> BAD_USER_ID
+FAILURE -> WALLET_NOT_AVAILABLE
+
+500 -> EWALLET_SERVICE_ERROR
+
+
+
+3. Transaction
+
+1. Transfer
+/tranfer.POST
+
+Success 202 ACCEPTED
+
+Failure ->
+FAILURE -> BAD_USER_ID
+
+4. Notification
+
+No APIs.
+
+
+
+Transaction flow:
+
+
+- user and wallet are created.
+- user calls the userService to send money to another user
+- UserService triggers an API which will create a transaction. in which it will pass sender as the user
+    and receiver as obtained from user.
+- TransactionService will accept the transaction request and post a message for wallet update
+- WalletService will perform wallet update operation, and publishes the wallet operation status.
+- Transaction consumer will fetch walletUpdate message and update the status of the appropriate transaction.
+- Post status update, transactionService will release notification message
+- NotificationService will receive the notification and send appropriate EMails.
